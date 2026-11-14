@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Petualangan Pulau Aksara - Bahasa Indonesia Kelas 5 Bab 2</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts: Fredoka & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: #0f172a;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        #game-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+        }
+        /* Custom Scrollbar for Review Modal */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(250, 204, 21, 0.5); }
+            50% { box-shadow: 0 0 28px rgba(250, 204, 21, 0.95); }
+        }
+        .floating {
+            animation: floatAnim 3s ease-in-out infinite;
+        }
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        /* Screen Shake & Red Flash when Hit by Trap */
+        @keyframes trapShake {
+            0%, 100% { transform: translate(0, 0); }
+            15% { transform: translate(-10px, 6px); }
+            30% { transform: translate(10px, -6px); }
+            45% { transform: translate(-8px, -4px); }
+            60% { transform: translate(8px, 4px); }
+            75% { transform: translate(-4px, 2px); }
+        }
+        .shake-screen {
+            animation: trapShake 0.55s ease-in-out;
+        }
+        #trap-flash-overlay {
+            pointer-events: none;
+            transition: opacity 0.4s ease-out;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #end-screen, #end-screen * { visibility: visible; }
+            #end-screen { position: absolute; inset: 0; background: white !important; padding: 0 !important; }
+            #review-list { max-height: none !important; overflow: visible !important; }
+            .no-print { display: none !important; }
+        }
+        /* Virtual Joystick Styling */
+        #joystick-zone {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(4px);
+            z-index: 20;
+            touch-action: none;
+        }
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 48px;
+            height: 48px;
+            margin-top: -24px;
+            margin-left: -24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- 3D Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Red Flash Overlay for Trap Penalty -->
+    <div id="trap-flash-overlay" class="fixed inset-0 z-50 bg-red-600/45 opacity-0"></div>
+
+    <!-- ================= START SCREEN (MENU UTAMA) ================= -->
+    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-sky-900/90 via-emerald-900/90 to-amber-900/90 backdrop-blur-md p-4 overflow-y-auto">
+        <div class="bg-white/95 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border-4 border-amber-400 text-center relative overflow-hidden my-auto">
+            <!-- Decorative Badge -->
+            <div class="inline-block bg-amber-100 text-amber-800 font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full mb-3 border border-amber-300">
+                📚 Bahasa Indonesia Kelas 5 • Bab 2 (Kurikulum Merdeka 2026)
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl font-display font-bold text-emerald-800 mb-2 leading-tight">
+                🏝️ Petualangan Pulau Aksara
+            </h1>
+            <p class="text-slate-600 text-sm sm:text-base mb-4">
+                Jelajahi pulau tropis & kuil kuno! Temukan <strong>30 Peti Harta Karun</strong> seputar <em>Buku Jendela Dunia</em>. Waspadai <strong>Peti Jebakan</strong> dan kejar <strong>Peti Emas Legendaris</strong> untuk skor tertinggi!
+            </p>
+
+            <!-- Chest Types Info Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5 text-left text-xs">
+                <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3">
+                    <div class="font-display font-bold text-amber-900 text-sm mb-0.5">🧰 18 Peti Reguler</div>
+                    <p class="text-slate-600">Benar: <strong class="text-emerald-700">+10 Poin</strong><br>Salah: <strong>0 Poin</strong></p>
+                </div>
+                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-3 shadow-sm">
+                    <div class="font-display font-bold text-yellow-800 text-sm mb-0.5">👑 6 Peti Emas HOTS</div>
+                    <p class="text-slate-600">Benar: <strong class="text-emerald-700">+25 Poin</strong><br>Salah: <strong>0 Poin</strong></p>
+                </div>
+                <div class="bg-purple-50 border-2 border-purple-300 rounded-2xl p-3">
+                    <div class="font-display font-bold text-purple-900 text-sm mb-0.5">☠️ 6 Peti Jebakan</div>
+                    <p class="text-slate-600">Benar: <strong class="text-emerald-700">+15 Poin</strong><br>Salah: <strong class="text-rose-600">-10 Poin!</strong></p>
+                </div>
+            </div>
+
+            <!-- Form Input Nama -->
+            <div class="text-left mb-4">
+                <label for="player-name-input" class="block text-sm font-bold text-slate-700 mb-1.5">
+                    Masukkan Nama Petualang (Siswa):
+                </label>
+                <input type="text" id="player-name-input" placeholder="Contoh: Aisyah Putri - Kelas 5B" maxlength="30"
+                    class="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 focus:border-amber-500 focus:outline-none text-base font-semibold text-slate-800 bg-slate-50">
+                <p id="name-error" class="text-red-500 text-xs mt-1 hidden font-semibold">⚠️ Yuk isi namamu dulu sebelum memulai petualangan!</p>
+            </div>
+
+            <!-- Controls Guide -->
+            <div class="bg-slate-100 rounded-2xl p-3 mb-5 text-left border border-slate-200 text-xs text-slate-700">
+                <p class="font-bold text-slate-800 mb-1">🎮 Kontrol Bermain:</p>
+                <p><strong>Komputer:</strong> <b>W, A, S, D / Panah</b> untuk jalan, geser <b>Mouse</b> untuk kamera, tekan <b>E / Spasi</b> untuk buka peti. <strong>HP/Tablet:</strong> Gunakan <b>Joystick Kiri</b> & usap layar kanan.</p>
+            </div>
+
+            <button id="start-btn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-display font-bold text-xl shadow-lg transform transition active:scale-95 pulse-glow cursor-pointer">
+                🚀 Mulai Petualangan!
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= HUD (SELAMA BERMAIN) ================= -->
+    <div id="hud" class="hidden fixed inset-0 pointer-events-none z-10 flex flex-col justify-between p-3 sm:p-5">
+        <!-- Top Bar -->
+        <div class="flex flex-wrap items-start justify-between gap-2">
+            <!-- Player Info & Score -->
+            <div class="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+                <div class="bg-slate-900/85 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl border border-white/20 shadow-lg flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl shadow">
+                        🧭
+                    </div>
+                    <div>
+                        <div id="hud-player-name" class="text-xs text-amber-300 font-bold truncate max-w-[120px] sm:max-w-[180px]">Petualang</div>
+                        <div class="text-base sm:text-lg font-display font-bold leading-tight">
+                            Skor: <span id="hud-score" class="text-yellow-400">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chest Counter -->
+                <div class="bg-slate-900/85 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl border border-white/20 shadow-lg flex items-center gap-2.5">
+                    <span class="text-2xl">🧰</span>
+                    <div>
+                        <div class="text-[11px] text-emerald-300 font-semibold">Harta Karun</div>
+                        <div class="text-base sm:text-lg font-display font-bold leading-tight">
+                            <span id="hud-chests">0</span> / 30
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Controls: Radar Mini-Map + Legend & Finish Button -->
+            <div class="flex items-start gap-2 sm:gap-3 pointer-events-auto">
+                <!-- Radar Legend -->
+                <div class="hidden sm:flex flex-col gap-1 bg-slate-900/85 backdrop-blur-md text-white px-3 py-2 rounded-2xl border border-white/20 shadow-lg text-[11px]">
+                    <div class="font-bold text-amber-300 border-b border-white/15 pb-0.5 mb-0.5">Legenda Peti:</div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span>
+                        <span>Biasa (+10)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-yellow-300 ring-2 ring-yellow-500/60 inline-block"></span>
+                        <span class="text-yellow-300 font-semibold">Emas (+25)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 ring-2 ring-rose-500/70 inline-block"></span>
+                        <span class="text-rose-300 font-semibold">Jebakan (+15 / -10)</span>
+                    </div>
+                </div>
+
+                <!-- Radar Mini-Map -->
+                <div class="relative bg-slate-900/85 backdrop-blur-md p-1.5 rounded-full border-2 border-amber-400/70 shadow-lg flex flex-col items-center">
+                    <canvas id="radar-canvas" width="96" height="96" class="rounded-full"></canvas>
+                    <div id="nearest-dist" class="absolute -bottom-2 bg-amber-500 text-slate-950 font-bold text-[10px] px-2 py-0.5 rounded-full shadow">
+                        -- m
+                    </div>
+                </div>
+
+                <!-- Sound & Finish Buttons -->
+                <div class="flex flex-col gap-2">
+                    <button id="sound-toggle-btn" title="Suara" class="bg-slate-900/85 hover:bg-slate-800 text-white p-2.5 rounded-xl border border-white/20 shadow text-sm font-bold cursor-pointer">
+                        🔊
+                    </button>
+                    <button id="finish-early-btn" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl shadow-lg font-bold text-xs sm:text-sm border border-rose-400 transition active:scale-95 cursor-pointer">
+                        🏁 Selesai & Nilai
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Compact Legend -->
+        <div class="sm:hidden self-end pointer-events-none bg-slate-900/80 text-white px-2.5 py-1 rounded-xl border border-white/15 text-[10px] flex gap-2.5 mt-1">
+            <span>🔵 Biasa +10</span>
+            <span class="text-yellow-300">🟡 Emas +25</span>
+            <span class="text-rose-300">🟣 Jebakan +15/-10</span>
+        </div>
+
+        <!-- Center Interaction Prompt (When near a chest) -->
+        <div id="interact-prompt" class="hidden self-center pointer-events-auto mb-16 sm:mb-8">
+            <button id="open-chest-btn" class="bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 text-slate-950 font-display font-bold text-sm sm:text-lg px-5 sm:px-6 py-3.5 rounded-full shadow-2xl border-4 border-white flex items-center gap-2 transform transition hover:scale-105 active:scale-95 animate-bounce cursor-pointer">
+                <span id="interact-prompt-text">✨ Buka Peti Harta Karun!</span>
+                <span class="text-xs bg-slate-900 text-amber-300 px-2 py-0.5 rounded-full">[E / Spasi]</span>
+            </button>
+        </div>
+
+        <!-- Bottom Right Quick Action Buttons for Touch / Easy Play -->
+        <div class="self-end pointer-events-auto flex gap-2">
+            <button id="teleport-nearest-btn" class="bg-sky-600/90 hover:bg-sky-500 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-2xl shadow-lg border border-sky-300/50 backdrop-blur-sm flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                <span>🧭 Arahkan ke Peti Terdekat</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Virtual Joystick for Touch / Mobile -->
+    <div id="joystick-zone" class="hidden md:hidden">
+        <div id="joystick-knob"></div>
+    </div>
+
+    <!-- ================= QUIZ MODAL (SOAL HARTA KARUN) ================= -->
+    <div id="quiz-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-3 sm:p-5">
+        <div id="quiz-modal-card" class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border-4 border-amber-400 max-h-[92vh] overflow-y-auto">
+            <!-- Header -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-slate-200">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span id="quiz-chest-icon" class="text-2xl">🪙</span>
+                    <span id="quiz-type-badge" class="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">
+                        Peti Reguler (+10 Poin)
+                    </span>
+                    <span id="quiz-topic-badge" class="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full">
+                        Unsur Intrinsik
+                    </span>
+                </div>
+                <span class="text-xs font-bold text-slate-500" id="quiz-progress-text">Peti 1 dari 30</span>
+            </div>
+
+            <!-- Point Rule Banner -->
+            <div id="quiz-rule-banner" class="mb-3 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between bg-amber-50 text-amber-900 border border-amber-200">
+                <span id="quiz-rule-text">Aturan Poin: Jawaban Benar +10 | Jawaban Salah 0</span>
+            </div>
+
+            <!-- Question Text -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-4">
+                <p id="quiz-question" class="text-slate-800 font-semibold text-base sm:text-lg leading-relaxed">
+                    Pertanyaan akan muncul di sini...
+                </p>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="quiz-options" class="space-y-2.5 mb-4">
+                <!-- Buttons injected dynamically -->
+            </div>
+
+            <!-- Feedback & Explanation Box -->
+            <div id="quiz-feedback" class="hidden rounded-2xl p-4 mb-4 border-2">
+                <div class="flex items-center gap-2 font-display font-bold text-lg mb-1" id="feedback-title">
+                    <!-- Benar / Kurang Tepat -->
+                </div>
+                <p id="feedback-explanation" class="text-sm leading-relaxed">
+                    <!-- Pembahasan -->
+                </p>
+            </div>
+
+            <!-- Continue Button -->
+            <div class="flex justify-end">
+                <button id="quiz-continue-btn" class="hidden w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-base shadow-lg transition active:scale-95 cursor-pointer">
+                    Lanjutkan Petualangan ➡️
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= END SCREEN (HASIL AKHIR & RAPOR NILAI) ================= -->
+    <div id="end-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6">
+        <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-8 shadow-2xl border-4 border-amber-400 max-h-[94vh] flex flex-col">
+            <!-- Header Result -->
+            <div class="text-center mb-4">
+                <div class="inline-block bg-emerald-100 text-emerald-800 font-bold text-xs px-3 py-1 rounded-full mb-1.5">
+                    🏆 Misi Bahasa Indonesia Kelas 5 Bab 2 (Kurikulum Merdeka 2026)
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800">
+                    Sertifikat & Rapor Petualang Aksara
+                </h2>
+                <p class="text-slate-600 font-semibold text-sm sm:text-base mt-1">
+                    Nama Siswa: <span id="end-player-name" class="text-emerald-700 font-bold">Siswa</span>
+                </p>
+            </div>
+
+            <!-- Main Score Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-3">
+                <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-amber-800">Total Skor Akhir</div>
+                    <div id="end-total-score" class="text-2xl sm:text-3xl font-display font-bold text-amber-600">0</div>
+                    <div class="text-[11px] text-slate-500">Maksimal: 420 Poin</div>
+                </div>
+                <div class="bg-sky-50 border-2 border-sky-300 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-sky-800">Nilai Konversi</div>
+                    <div id="end-grade-number" class="text-2xl sm:text-3xl font-display font-bold text-sky-600">0</div>
+                    <div class="text-[11px] text-slate-500">Skala 0 – 100</div>
+                </div>
+                <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-emerald-800">Benar / Salah</div>
+                    <div class="text-xl sm:text-2xl font-display font-bold text-emerald-600">
+                        <span id="end-correct-count">0</span> / <span id="end-wrong-count" class="text-rose-500">0</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">Dari <span id="end-answered-count">0</span> peti dibuka</div>
+                </div>
+                <div class="bg-purple-50 border-2 border-purple-300 rounded-2xl p-3 text-center">
+                    <div class="text-xs font-bold text-purple-800">Predikat</div>
+                    <div id="end-predicate" class="text-2xl sm:text-3xl font-display font-bold text-purple-600">A</div>
+                    <div id="end-predicate-label" class="text-[11px] font-bold text-purple-700">Sangat Baik</div>
+                </div>
+            </div>
+
+            <!-- Chest Breakdown Summary -->
+            <div class="grid grid-cols-3 gap-2 mb-4 text-xs">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center">
+                    <span class="font-bold text-slate-700 block">🧰 Peti Reguler (18)</span>
+                    <span id="breakdown-regular" class="text-emerald-700 font-bold">+0 Poin (0 Benar)</span>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-2.5 text-center">
+                    <span class="font-bold text-yellow-800 block">👑 Peti Emas (6)</span>
+                    <span id="breakdown-gold" class="text-amber-700 font-bold">+0 Poin (0 Benar)</span>
+                </div>
+                <div class="bg-purple-50 border border-purple-300 rounded-xl p-2.5 text-center">
+                    <span class="font-bold text-purple-900 block">☠️ Peti Jebakan (6)</span>
+                    <span id="breakdown-trap" class="text-purple-800 font-bold">0 Poin (0 Benar, 0 Kena Jebakan)</span>
+                </div>
+            </div>
+
+            <!-- Review List Header -->
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-display font-bold text-slate-700 text-base">📋 Evaluasi & Pembahasan Seluruh Soal:</h3>
+                <span class="text-xs text-slate-500 no-print">Gulir untuk melihat semua</span>
+            </div>
+
+            <!-- Scrollable Review List -->
+            <div id="review-list" class="flex-1 overflow-y-auto space-y-2.5 pr-1 mb-4 border-t border-b border-slate-200 py-3">
+                <!-- Review items injected dynamically -->
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center no-print">
+                <button id="print-report-btn" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-display font-bold text-base shadow-lg transition active:scale-95 cursor-pointer">
+                    🖨️ Cetak / Simpan PDF Rapor
+                </button>
+                <button id="play-again-btn" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-display font-bold text-base shadow-lg transition active:scale-95 cursor-pointer">
+                    🔄 Main Lagi dari Awal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Notification (No alert()) -->
+    <div id="toast-msg" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xl border border-amber-400 transition-opacity duration-300 opacity-0 pointer-events-none text-center">
+        Pesan notifikasi
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * BANK 30 SOAL BAHASA INDONESIA KELAS 5 BAB 2 (KURIKULUM MERDEKA 2026)
+         * Terbagi menjadi 3 kategori tingkat kesulitan untuk jenis peti:
+         * - 'regular' (18 soal): +10 benar, 0 salah
+         * - 'gold' (6 soal HOTS / Analisis mendalam): +25 benar, 0 salah
+         * - 'trap' (6 soal Jebakan / Ketelitian tinggi): +15 benar, -10 salah
+         * ============================================================================
+         */
+        const QUESTIONS_BANK = [
+            // === 6 SOAL HOTS UNTUK PETI EMAS LEGENDARIS (+25 POIN) ===
+            {
+                tier: "gold",
+                topic: "Analisis Unsur Intrinsik (HOTS)",
+                q: "Bacalah penggalan cerita berikut: 'Bima menatap piala emas di etalase sekolah dengan mata berbinar. Setiap pulang sekolah, ia berlatih menulis puisi di bawah pohon mangga sambil mengabaikan ajakan teman-temannya bermain gim.' Watak tokoh Bima dan latar waktu yang tergambar dalam kutipan tersebut adalah ....",
+                options: [
+                    "Sombong dan berambisi; pagi hari di kelas",
+                    "Tekun, disiplin, dan fokus pada tujuan; sore hari sepulang sekolah",
+                    "Pemalu dan penyendiri; malam hari di halaman rumah",
+                    "Mudah terpengaruh teman; siang hari di perpustakaan"
+                ],
+                answer: 1,
+                explanation: "Bima rela mengabaikan ajakan bermain demi berlatih setiap pulang sekolah (sore hari), yang menunjukkan watak tekun dan fokus pada cita-citanya."
+            },
+            {
+                tier: "gold",
+                topic: "Analisis Majas (HOTS)",
+                q: "Perhatikan kalimat berikut: 'Raja siang mulai merangkak naik, membangunkan embun yang masih tertidur pulas di ujung dedaunan.' Dua majas yang berpadu secara berurutan dalam kalimat tersebut adalah ....",
+                options: [
+                    "Hiperbola dan Metafora",
+                    "Metafora ('Raja siang') dan Personifikasi ('membangunkan embun yang tertidur')",
+                    "Personifikasi dan Hiperbola",
+                    "Simile dan Metafora"
+                ],
+                answer: 1,
+                explanation: "'Raja siang' adalah metafora untuk matahari, sedangkan embun yang 'tertidur pulas' dan 'dibangunkan' adalah majas personifikasi."
+            },
+            {
+                tier: "gold",
+                topic: "Transformasi Kalimat (HOTS)",
+                q: "Ibu Guru berpesan kepada murid-murid kelas 5, \"Kalian harus membaca buku ini sampai selesai sebelum kita mendiskusikan amanatnya minggu depan.\" Jika diubah menjadi kalimat tidak langsung yang paling tepat adalah ....",
+                options: [
+                    "Ibu Guru berpesan kepada murid-murid kelas 5 agar mereka membaca buku itu sampai selesai sebelum mereka mendiskusikan amanatnya minggu depan.",
+                    "Ibu Guru berpesan kepada murid-murid kelas 5 bahwa kalian harus membaca buku ini sebelum kita berdiskusi.",
+                    "Ibu Guru berpesan agar kami membaca buku ini sampai selesai sebelum kita berdiskusi minggu depan.",
+                    "Murid-murid kelas 5 berpesan kepada Ibu Guru untuk mendiskusikan amanat buku minggu depan."
+                ],
+                answer: 0,
+                explanation: "Pada kalimat tidak langsung: tanda petik hilang, 'Kalian' berubah menjadi 'mereka', 'ini' menjadi 'itu', dan 'kita' menjadi 'mereka'."
+            },
+            {
+                tier: "gold",
+                topic: "Perbandingan Teks Fiksi & Nonfiksi (HOTS)",
+                q: "Rani membaca dua buku tentang gunung berapi. Buku A berisi kisah petualangan seorang anak yang berteman dengan peri penjaga kawah gunung, sedangkan Buku B berisi proses terjadinya erupsi magma disertai grafik suhu. Perbedaan mendasar kedua buku tersebut adalah ....",
+                options: [
+                    "Buku A adalah nonfiksi karena ada tokoh anak, sedangkan Buku B adalah fiksi karena ada grafik",
+                    "Buku A adalah fiksi karena bersifat imajinatif/khayalan, sedangkan Buku B adalah nonfiksi karena menyajikan fakta ilmiah",
+                    "Keduanya merupakan buku fiksi karena sama-sama membahas gunung berapi",
+                    "Buku A disusun berdasarkan penelitian, sedangkan Buku B ditulis oleh ilustrator"
+                ],
+                answer: 1,
+                explanation: "Buku A mengandung unsur khayalan (peri penjaga kawah) sehingga termasuk fiksi, sedangkan Buku B memuat data faktual dan ilmiah (nonfiksi)."
+            },
+            {
+                tier: "gold",
+                topic: "Alur & Konflik Cerita (HOTS)",
+                q: "Dalam sebuah cerita, tokoh utama kehilangan buku catatan harian milik sahabatnya yang dipinjamkan kepadanya. Ia merasa sangat bersalah dan berusaha mencarinya ke seluruh sudut sekolah hingga akhirnya menemukannya di ruang tata usaha. Tahapan alur yang menggambarkan puncak ketegangan saat ia panik mencari buku tersebut disebut ....",
+                options: [
+                    "Pengenalan (Orientasi)",
+                    "Klimaks (Puncak Konflik)",
+                    "Penyelesaian (Resolusi)",
+                    "Amanat"
+                ],
+                answer: 1,
+                explanation: "Klimaks adalah puncak ketegangan atau masalah utama dalam alur cerita sebelum menuju tahap penyelesaian."
+            },
+            {
+                tier: "gold",
+                topic: "Produksi & Anatomi Buku (HOTS)",
+                q: "Sebuah naskah cerita anak sudah selesai ditulis, tetapi kalimatnya masih banyak kesalahan ejaan dan gambarnya belum dibuat. Dua profesi yang paling berperan penting pada tahap selanjutnya sebelum buku dicetak penerbit adalah ....",
+                options: [
+                    "Pustakawan dan pembaca",
+                    "Editor (penyunting) dan ilustrator",
+                    "Percetakan dan distributor toko buku",
+                    "Penulis sinopsis dan penjual kertas"
+                ],
+                answer: 1,
+                explanation: "Editor bertugas memperbaiki ejaan dan tata bahasa naskah, sedangkan ilustrator membuat gambar pendukung isi cerita."
+            },
+
+            // === 6 SOAL KETELITIAN UNTUK PETI JEBAKAN (+15 BENAR / -10 SALAH) ===
+            {
+                tier: "trap",
+                topic: "Jebakan Tanda Baca Kalimat Langsung",
+                q: "HATI-HATI JEBAKAN! Manakah penulisan kalimat langsung di bawah ini yang 100% BENAR sesuai kaidah tanda baca bahasa Indonesia?",
+                options: [
+                    "\"Siapa yang meminjam kamus di rak itu\"? tanya Dinda.",
+                    "\"Siapa yang meminjam kamus di rak itu?\" tanya Dinda.",
+                    "\"Siapa yang meminjam kamus di rak itu?,\" tanya Dinda.",
+                    "\"siapa yang meminjam kamus di rak itu?\" Tanya Dinda."
+                ],
+                answer: 1,
+                explanation: "Tanda tanya (?) berada di dalam tanda petik sebelum petik penutup, tanpa tambahan tanda koma, dan kata 'tanya' diawali huruf kecil."
+            },
+            {
+                tier: "trap",
+                topic: "Jebakan Jenis Majas",
+                q: "WASPADA! Kalimat 'Suara tangisannya menyayat hati hingga terdengar sampai ke ujung dunia' sering dikira personifikasi, padahal kalimat tersebut menggunakan majas ....",
+                options: [
+                    "Personifikasi",
+                    "Metafora",
+                    "Hiperbola",
+                    "Litotes"
+                ],
+                answer: 2,
+                explanation: "Frasa 'terdengar sampai ke ujung dunia' adalah ungkapan yang melebih-lebihkan kenyataan secara drastis, sehingga termasuk majas hiperbola."
+            },
+            {
+                tier: "trap",
+                topic: "Jebakan Bagian-Bagian Buku",
+                q: "JANGAN TERTUKAR! Daftar istilah-istilah sulit beserta artinya yang disusun secara alfabetis di bagian akhir buku pelajaran disebut ....",
+                options: [
+                    "Daftar isi",
+                    "Glosarium",
+                    "Sinopsis",
+                    "Daftar pustaka"
+                ],
+                answer: 1,
+                explanation: "Glosarium adalah kamus ringkas di akhir buku yang menjelaskan istilah penting, sedangkan daftar pustaka adalah daftar sumber rujukan."
+            },
+            {
+                tier: "trap",
+                topic: "Jebakan Tokoh Cerita",
+                q: "TELITI SEBELUM MENJAWAB! Dalam cerita, tokoh yang berperan sebagai penengah atau pembantu penyelesaian konflik antara tokoh protagonis dan antagonis disebut tokoh ....",
+                options: [
+                    "Protagonis",
+                    "Antagonis",
+                    "Tritagonis",
+                    "Latar"
+                ],
+                answer: 2,
+                explanation: "Tritagonis adalah tokoh ketiga yang sering menjadi penengah atau pendamping yang membantu menyelesaikan masalah."
+            },
+            {
+                tier: "trap",
+                topic: "Jebakan Fiksi vs Nonfiksi",
+                q: "AWAS JEBAKAN! Manakah di bawah ini yang BUKAN termasuk buku fiksi?",
+                options: [
+                    "Fabel 'Kancil dan Siput'",
+                    "Novel 'Laskar Pelangi'",
+                    "Laporan Hasil Pengamatan Pertumbuhan Kacang Hijau",
+                    "Cerita Rakyat 'Malin Kundang'"
+                ],
+                answer: 2,
+                explanation: "Laporan hasil pengamatan disusun berdasarkan data nyata dan fakta percobaan, sehingga termasuk karya nonfiksi."
+            },
+            {
+                tier: "trap",
+                topic: "Jebakan Makna Ungkapan Metafora",
+                q: "PERHATIKAN DENGAN CERMAT! Dalam kalimat 'Meskipun menjadi juara kelas, Nadia tetap rendah hati kepada semua temannya', makna ungkapan 'rendah hati' adalah ....",
+                options: [
+                    "Merasa minder dan tidak percaya diri",
+                    "Tidak sombong dan mau menghargai orang lain",
+                    "Suka merendahkan kemampuan teman",
+                    "Pemalu dan tidak berani berbicara"
+                ],
+                answer: 1,
+                explanation: "Jangan tertukar antara 'rendah hati' (tidak sombong/baik hati) dengan 'rendah diri' (minder/tidak percaya diri)."
+            },
+
+            // === 18 SOAL REGULER (+10 BENAR / 0 SALAH) ===
+            {
+                tier: "regular",
+                topic: "Unsur Intrinsik",
+                q: "Tokoh utama dalam sebuah cerita yang memiliki sifat baik hati, suka menolong, dan menjadi pusat simpati pembaca disebut tokoh ....",
+                options: ["Antagonis", "Protagonis", "Tritagonis", "Figuran"],
+                answer: 1,
+                explanation: "Tokoh protagonis adalah tokoh utama yang mendukung jalan cerita dan biasanya memiliki watak baik."
+            },
+            {
+                tier: "regular",
+                topic: "Unsur Intrinsik",
+                q: "Perhatikan kutipan berikut: 'Matahari mulai terbenam di ufuk barat. Suara jangkrik bersahutan di pematang sawah yang sunyi.' Latar yang tergambar dalam kutipan tersebut adalah ....",
+                options: ["Pagi hari di pasar", "Sore menjelang malam di sawah", "Siang hari di sekolah", "Tengah malam di kota"],
+                answer: 1,
+                explanation: "Kata 'matahari mulai terbenam' menunjukkan latar waktu sore menjelang malam, sedangkan 'pematang sawah' menunjukkan latar tempat."
+            },
+            {
+                tier: "regular",
+                topic: "Unsur Intrinsik",
+                q: "Pesan moral atau nasihat kebaikan yang ingin disampaikan penulis kepada pembaca melalui sebuah cerita disebut ....",
+                options: ["Alur", "Tema", "Amanat", "Sudut pandang"],
+                answer: 2,
+                explanation: "Amanat adalah pesan moral atau pelajaran berharga yang dapat dipetik pembaca dari isi cerita."
+            },
+            {
+                tier: "regular",
+                topic: "Unsur Intrinsik",
+                q: "Rangkaian peristiwa yang disusun berdasarkan hubungan sebab-akibat dari awal, tengah, hingga akhir cerita disebut ....",
+                options: ["Alur (Plot)", "Latar (Setting)", "Penokohan", "Judul"],
+                answer: 0,
+                explanation: "Alur atau plot adalah jalan cerita yang menggerakkan peristiwa dari pengenalan, konflik, hingga penyelesaian."
+            },
+            {
+                tier: "regular",
+                topic: "Unsur Intrinsik",
+                q: "Tokoh yang sering menentang tokoh utama dan memicu timbulnya konflik dalam cerita disebut tokoh ....",
+                options: ["Protagonis", "Antagonis", "Pembantu", "Narator"],
+                answer: 1,
+                explanation: "Tokoh antagonis adalah tokoh penentang tokoh utama yang biasanya menimbulkan masalah atau konflik."
+            },
+            {
+                tier: "regular",
+                topic: "Majas (Gaya Bahasa)",
+                q: "Kalimat berikut yang menggunakan majas personifikasi adalah ....",
+                options: ["Suaranya menggelegar membelah angkasa.", "Angin malam berbisik lembut membelai dedaunan.", "Buku adalah jendela dunia.", "Ayah membanting tulang demi keluarga."],
+                answer: 1,
+                explanation: "Majas personifikasi mengumpamakan benda mati (angin) seolah-olah memiliki sifat manusia (berbisik dan membelai)."
+            },
+            {
+                tier: "regular",
+                topic: "Majas (Gaya Bahasa)",
+                q: "'Rina dikenal sebagai kutu buku di kelasnya karena setiap hari ia selalu membaca di perpustakaan.' Makna ungkapan 'kutu buku' pada majas metafora tersebut adalah ....",
+                options: ["Serangga yang hidup di buku", "Anak yang suka merusak buku", "Orang yang sangat gemar membaca buku", "Penjaga perpustakaan sekolah"],
+                answer: 2,
+                explanation: "Majas metafora membandingkan dua hal secara langsung. 'Kutu buku' bermakna orang yang sangat suka membaca."
+            },
+            {
+                tier: "regular",
+                topic: "Majas (Gaya Bahasa)",
+                q: "'Bel sekolah berteriak nyaring memanggil para siswa untuk masuk ke kelas.' Majas yang terdapat dalam kalimat tersebut adalah ....",
+                options: ["Hiperbola", "Metafora", "Personifikasi", "Ironi"],
+                answer: 2,
+                explanation: "Bel sekolah (benda mati) digambarkan dapat 'berteriak' dan 'memanggil' seperti manusia (personifikasi)."
+            },
+            {
+                tier: "regular",
+                topic: "Majas (Gaya Bahasa)",
+                q: "Ungkapan 'bintang kelas' dalam kalimat 'Dito menjadi bintang kelas karena prestasinya' termasuk majas ....",
+                options: ["Personifikasi", "Hiperbola", "Metafora", "Litotes"],
+                answer: 2,
+                explanation: "'Bintang kelas' adalah majas metafora yang berarti siswa paling berprestasi atau pandai di kelas."
+            },
+            {
+                tier: "regular",
+                topic: "Kalimat Langsung & Tidak Langsung",
+                q: "Penulisan kalimat langsung yang tepat sesuai kaidah EYD adalah ....",
+                options: ["Ibu berkata, 'Jangan lupa merapikan bukumu!'", "Ibu berkata, \"Jangan lupa merapikan bukumu!\"", "\"Jangan lupa merapikan bukumu\"! kata Ibu.", "Ibu berkata \"Jangan lupa merapikan bukumu!\""],
+                answer: 1,
+                explanation: "Kalimat langsung diapit tanda petik dua (\"...\"), dipisahkan tanda koma setelah pengiring, dan tanda seru berada di dalam tanda petik."
+            },
+            {
+                tier: "regular",
+                topic: "Kalimat Langsung & Tidak Langsung",
+                q: "Manakah di bawah ini yang merupakan kalimat tidak langsung?",
+                options: ["\"Aku sangat suka membaca dongeng,\" ujar Siti.", "Guru menyuruh kami membuka buku halaman sepuluh.", "Budi berseru, \"Hore, aku menemukan bukunya!\"", "\"Siapa penulis cerita ini?\" tanya Dina."],
+                answer: 1,
+                explanation: "Kalimat tidak langsung melaporkan ucapan orang lain tanpa tanda petik dan mengalami perubahan kata ganti."
+            },
+            {
+                tier: "regular",
+                topic: "Kalimat Langsung & Tidak Langsung",
+                q: "Kalimat langsung: Raka berkata, \"Besok aku akan pergi ke toko buku.\" Bentuk kalimat tidak langsungnya adalah ....",
+                options: ["Raka berkata bahwa besok ia akan pergi ke toko buku.", "Raka berkata bahwa besok aku akan pergi ke toko buku.", "Besok Raka berkata akan pergi ke toko buku.", "Raka berkata, besok ia pergi ke toko buku."],
+                answer: 0,
+                explanation: "Kata ganti 'aku' dalam ucapan Raka berubah menjadi kata ganti orang ketiga 'ia' atau 'dia'."
+            },
+            {
+                tier: "regular",
+                topic: "Bagian-Bagian Buku",
+                q: "Orang yang bertugas membuat gambar-gambar menarik untuk memperjelas isi cerita dalam sebuah buku disebut ....",
+                options: ["Penulis", "Editor", "Ilustrator", "Penerbit"],
+                answer: 2,
+                explanation: "Ilustrator adalah seniman yang membuat ilustrasi atau gambar pendukung dalam buku."
+            },
+            {
+                tier: "regular",
+                topic: "Bagian-Bagian Buku",
+                q: "Bagian buku yang terletak di bagian paling depan, memuat judul buku, nama penulis, nama penerbit, dan gambar sampul disebut ....",
+                options: ["Daftar isi", "Kover (Sampul buku)", "Glosarium", "Daftar pustaka"],
+                answer: 1,
+                explanation: "Kover atau sampul depan berfungsi melindungi isi buku sekaligus menampilkan identitas utama buku."
+            },
+            {
+                tier: "regular",
+                topic: "Bagian-Bagian Buku",
+                q: "Jika kamu ingin mencari letak halaman suatu bab dengan cepat tanpa membuka seluruh halaman buku, bagian yang harus kamu lihat adalah ....",
+                options: ["Sinopsis", "Biodata penulis", "Daftar isi", "Punggung buku"],
+                answer: 2,
+                explanation: "Daftar isi memuat urutan judul bab beserta nomor halamannya secara sistematis."
+            },
+            {
+                tier: "regular",
+                topic: "Bagian-Bagian Buku",
+                q: "Ringkasan singkat mengenai garis besar isi cerita yang biasanya terdapat di sampul belakang buku (blurb) disebut ....",
+                options: ["Sinopsis", "Indeks", "Kata pengantar", "Lampiran"],
+                answer: 0,
+                explanation: "Sinopsis di sampul belakang memberikan gambaran singkat isi buku agar calon pembaca tertarik."
+            },
+            {
+                tier: "regular",
+                topic: "Teks Fiksi & Nonfiksi",
+                q: "Manakah di bawah ini yang termasuk contoh buku nonfiksi?",
+                options: ["Kumpulan Dongeng Nusantara", "Petualangan Kancil dan Buaya", "Ensiklopedia Tata Surya dan Planet", "Legenda Danau Toba"],
+                answer: 2,
+                explanation: "Ensiklopedia berisi fakta ilmiah dan pengetahuan nyata sehingga termasuk buku nonfiksi."
+            },
+            {
+                tier: "regular",
+                topic: "Teks Fiksi & Nonfiksi",
+                q: "Buku 'Biografi Ki Hajar Dewantara: Bapak Pendidikan Nasional' termasuk jenis buku nonfiksi karena ....",
+                options: ["Menggunakan banyak majas hiperbola", "Menceritakan kisah nyata perjalanan hidup tokoh sejarah berdasarkan fakta", "Berisi cerita hewan yang bisa berbicara", "Hanya berupa gambar tanpa tulisan"],
+                answer: 1,
+                explanation: "Biografi adalah riwayat hidup seseorang yang ditulis berdasarkan fakta sejarah yang benar-benar terjadi."
+            }
+        ];
+
+        /**
+         * ============================================================================
+         * AUDIO SYNTHESIZER (WEB AUDIO API - EFEK SUARA BERBEDA TIAP PETI)
+         * ============================================================================
+         */
+        class SoundFX {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+            playTone(freq, type, duration, delay = 0, vol = 0.15) {
+                if (!this.enabled) return;
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(this.ctx.currentTime + delay);
+                osc.stop(this.ctx.currentTime + delay + duration);
+            }
+            playOpenChest(tier = 'regular') {
+                if (tier === 'gold') {
+                    // Fanfare emas berkilau
+                    this.playTone(587.33, 'triangle', 0.14, 0, 0.22);
+                    this.playTone(739.99, 'triangle', 0.14, 0.09, 0.22);
+                    this.playTone(880.00, 'triangle', 0.14, 0.18, 0.22);
+                    this.playTone(1174.66, 'sine', 0.35, 0.27, 0.25);
+                } else if (tier === 'trap') {
+                    // Nada misterius peti jebakan
+                    this.playTone(220, 'sawtooth', 0.22, 0, 0.14);
+                    this.playTone(207.65, 'sawtooth', 0.28, 0.18, 0.14);
+                } else {
+                    // Suara peti biasa
+                    this.playTone(523.25, 'triangle', 0.15, 0, 0.2);
+                    this.playTone(659.25, 'triangle', 0.15, 0.1, 0.2);
+                    this.playTone(783.99, 'triangle', 0.25, 0.2, 0.2);
+                }
+            }
+            playCorrect(tier = 'regular') {
+                if (tier === 'gold') {
+                    // Fanfare megah untuk +25 poin
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                    notes.forEach((n, i) => this.playTone(n, 'triangle', 0.18, i * 0.09, 0.25));
+                } else {
+                    this.playTone(523.25, 'sine', 0.12, 0, 0.2);
+                    this.playTone(659.25, 'sine', 0.12, 0.1, 0.2);
+                    this.playTone(783.99, 'sine', 0.12, 0.2, 0.2);
+                    this.playTone(1046.50, 'sine', 0.35, 0.3, 0.25);
+                }
+            }
+            playWrong() {
+                this.playTone(300, 'sawtooth', 0.2, 0, 0.15);
+                this.playTone(220, 'sawtooth', 0.3, 0.18, 0.15);
+            }
+            playTrapPenalty() {
+                // Suara jebakan dramatis (-10 poin)
+                this.playTone(196.00, 'sawtooth', 0.18, 0, 0.22);
+                this.playTone(155.56, 'sawtooth', 0.22, 0.15, 0.22);
+                this.playTone(110.00, 'square', 0.45, 0.32, 0.22);
+            }
+            playFinish() {
+                const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5];
+                notes.forEach((n, idx) => {
+                    this.playTone(n, 'triangle', 0.18, idx * 0.12, 0.2);
+                });
+            }
+        }
+        const sfx = new SoundFX();
+
+        /**
+         * ============================================================================
+         * GAME STATE & VARIABLES
+         * ============================================================================
+         */
+        let gameState = {
+            started: false,
+            paused: false,
+            ended: false,
+            playerName: "Siswa Hebat",
+            score: 0,
+            chestsOpened: 0,
+            correctCount: 0,
+            wrongCount: 0,
+            statsByTier: {
+                regular: { correct: 0, points: 0 },
+                gold: { correct: 0, points: 0 },
+                trap: { correct: 0, wrong: 0, points: 0 }
+            },
+            history: [],
+            activeChest: null
+        };
+
+        // Three.js Globals
+        let scene, camera, renderer;
+        let playerGroup, leftLeg, rightLeg, leftArm, rightArm;
+        let chests = []; // { id, tier, mesh, lid, lightBeam, ring, crownOrSkull, x, z, opened, questionData }
+        let trees = [];
+        let particles = [];
+        let waterMesh;
+
+        // Player Movement & Camera Orbit
+        const ISLAND_RADIUS = 112;
+        let playerPos = new THREE.Vector3(0, 0, 12);
+        let playerRotY = Math.PI;
+        let camYaw = Math.PI;
+        let camPitch = 0.32;
+        const camDistance = 11;
+
+        // Input States
+        const keys = { w: false, a: false, s: false, d: false, e: false, E: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        let joyVector = { x: 0, y: 0 };
+        let isDraggingCamera = false;
+        let prevPointer = { x: 0, y: 0 };
+
+        // DOM Elements
+        const canvas = document.getElementById('game-canvas');
+        const radarCanvas = document.getElementById('radar-canvas');
+        const radarCtx = radarCanvas.getContext('2d');
+
+        /**
+         * ============================================================================
+         * INITIALIZE 3D SCENE (THREE.JS)
+         * ============================================================================
+         */
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x7dd3fc);
+            scene.fog = new THREE.FogExp2(0xbae6fd, 0.0055);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Lighting
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f6212, 0.85);
+            hemiLight.position.set(0, 80, 0);
+            scene.add(hemiLight);
+
+            const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.1);
+            dirLight.position.set(60, 100, 50);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 10;
+            dirLight.shadow.camera.far = 260;
+            const d = 125;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            buildEnvironment();
+            buildPlayer();
+            spawnChests();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function buildEnvironment() {
+            // 1. Ocean Water
+            const waterGeo = new THREE.PlaneGeometry(1200, 1200);
+            const waterMat = new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                roughness: 0.25,
+                metalness: 0.1
+            });
+            waterMesh = new THREE.Mesh(waterGeo, waterMat);
+            waterMesh.rotation.x = -Math.PI / 2;
+            waterMesh.position.y = -0.6;
+            scene.add(waterMesh);
+
+            // 2. Sandy Beach Base
+            const beachGeo = new THREE.CylinderGeometry(ISLAND_RADIUS + 8, ISLAND_RADIUS + 18, 1.4, 64);
+            const beachMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 });
+            const beach = new THREE.Mesh(beachGeo, beachMat);
+            beach.position.y = -0.4;
+            beach.receiveShadow = true;
+            scene.add(beach);
+
+            // 3. Lush Green Grass Inner Island
+            const grassGeo = new THREE.CylinderGeometry(ISLAND_RADIUS - 6, ISLAND_RADIUS, 1.2, 64);
+            const grassMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.85 });
+            const grass = new THREE.Mesh(grassGeo, grassMat);
+            grass.position.y = -0.15;
+            grass.receiveShadow = true;
+            scene.add(grass);
+
+            // 4. Central Ancient Temple Plaza ("Kuil Aksara")
+            const plazaGeo = new THREE.CylinderGeometry(18, 20, 0.8, 8);
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+            const plaza = new THREE.Mesh(plazaGeo, stoneMat);
+            plaza.position.set(0, 0.2, 0);
+            plaza.receiveShadow = true;
+            scene.add(plaza);
+
+            // Temple Pillars around Central Plaza
+            const pillarGeo = new THREE.CylinderGeometry(0.9, 1.1, 7, 12);
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.7 });
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const px = Math.cos(angle) * 15;
+                const pz = Math.sin(angle) * 15;
+                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                pillar.position.set(px, 3.8, pz);
+                pillar.castShadow = true;
+                pillar.receiveShadow = true;
+                scene.add(pillar);
+
+                const cap = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.4, 0.7, 2.4),
+                    new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.3, roughness: 0.4 })
+                );
+                cap.position.set(px, 7.5, pz);
+                scene.add(cap);
+            }
+
+            // Central Giant Golden Book Monument
+            const pedestal = new THREE.Mesh(
+                new THREE.BoxGeometry(4, 2.2, 4),
+                new THREE.MeshStandardMaterial({ color: 0x64748b })
+            );
+            pedestal.position.set(0, 1.4, 0);
+            pedestal.castShadow = true;
+            scene.add(pedestal);
+
+            const bookLeft = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 0.3, 2.6),
+                new THREE.MeshStandardMaterial({ color: 0xfef08a })
+            );
+            bookLeft.position.set(-0.85, 2.8, 0);
+            bookLeft.rotation.z = 0.25;
+            scene.add(bookLeft);
+
+            const bookRight = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 0.3, 2.6),
+                new THREE.MeshStandardMaterial({ color: 0xfef08a })
+            );
+            bookRight.position.set(0.85, 2.8, 0);
+            bookRight.rotation.z = -0.25;
+            scene.add(bookRight);
+
+            // 5. Decorative Tropical Trees & Rocks
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+            const leafMat1 = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.7 });
+            const leafMat2 = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7 });
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
+
+            for (let i = 0; i < 65; i++) {
+                const angle = (i * 137.5 * Math.PI) / 180;
+                const radius = 24 + ((i * 29) % (ISLAND_RADIUS - 32));
+                const tx = Math.cos(angle) * radius;
+                const tz = Math.sin(angle) * radius;
+
+                const treeGroup = new THREE.Group();
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.75, 4.5, 8), trunkMat);
+                trunk.position.y = 2.25;
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+
+                const foliage1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.8, 1), leafMat1);
+                foliage1.position.y = 5.2;
+                foliage1.castShadow = true;
+                treeGroup.add(foliage1);
+
+                const foliage2 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.0, 1), leafMat2);
+                foliage2.position.set(0.8, 6.6, 0.5);
+                foliage2.castShadow = true;
+                treeGroup.add(foliage2);
+
+                const scale = 0.85 + (i % 5) * 0.12;
+                treeGroup.scale.set(scale, scale, scale);
+                treeGroup.position.set(tx, 0.3, tz);
+                scene.add(treeGroup);
+                trees.push({ x: tx, z: tz, r: 1.3 });
+            }
+
+            // Scatter Ancient Stones & Ruins
+            for (let i = 0; i < 28; i++) {
+                const angle = ((i * 73 + 20) * Math.PI) / 180;
+                const radius = 22 + ((i * 41) % (ISLAND_RADIUS - 26));
+                const rx = Math.cos(angle) * radius;
+                const rz = Math.sin(angle) * radius;
+
+                const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.4 + (i % 3) * 0.5, 0), rockMat);
+                rock.position.set(rx, 0.8, rz);
+                rock.rotation.set(i, i * 0.5, 0);
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                scene.add(rock);
+            }
+        }
+
+        function buildPlayer() {
+            playerGroup = new THREE.Group();
+
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(1.1, 1.3, 0.65),
+                new THREE.MeshStandardMaterial({ color: 0xf97316 })
+            );
+            body.position.y = 1.65;
+            body.castShadow = true;
+            playerGroup.add(body);
+
+            const backpack = new THREE.Mesh(
+                new THREE.BoxGeometry(0.85, 1.0, 0.45),
+                new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            backpack.position.set(0, 1.7, -0.45);
+            backpack.castShadow = true;
+            playerGroup.add(backpack);
+
+            const head = new THREE.Mesh(
+                new THREE.BoxGeometry(0.85, 0.85, 0.85),
+                new THREE.MeshStandardMaterial({ color: 0xfed7aa })
+            );
+            head.position.y = 2.8;
+            head.castShadow = true;
+            playerGroup.add(head);
+
+            const hatBrim = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.85, 0.85, 0.12, 16),
+                new THREE.MeshStandardMaterial({ color: 0x92400e })
+            );
+            hatBrim.position.y = 3.25;
+            playerGroup.add(hatBrim);
+
+            const hatTop = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.45, 0.55, 0.45, 16),
+                new THREE.MeshStandardMaterial({ color: 0xb45309 })
+            );
+            hatTop.position.y = 3.5;
+            playerGroup.add(hatTop);
+
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.05), eyeMat);
+            eyeL.position.set(-0.2, 2.85, 0.43);
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.05), eyeMat);
+            eyeR.position.set(0.2, 2.85, 0.43);
+            playerGroup.add(eyeL, eyeR);
+
+            const limbGeo = new THREE.BoxGeometry(0.35, 0.95, 0.35);
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a });
+            const armMat = new THREE.MeshStandardMaterial({ color: 0xfed7aa });
+
+            leftLeg = new THREE.Mesh(limbGeo, legMat);
+            leftLeg.position.set(-0.3, 0.55, 0);
+            leftLeg.castShadow = true;
+            playerGroup.add(leftLeg);
+
+            rightLeg = new THREE.Mesh(limbGeo, legMat);
+            rightLeg.position.set(0.3, 0.55, 0);
+            rightLeg.castShadow = true;
+            playerGroup.add(rightLeg);
+
+            leftArm = new THREE.Mesh(limbGeo, armMat);
+            leftArm.position.set(-0.78, 1.65, 0);
+            leftArm.castShadow = true;
+            playerGroup.add(leftArm);
+
+            rightArm = new THREE.Mesh(limbGeo, armMat);
+            rightArm.position.set(0.78, 1.65, 0);
+            rightArm.castShadow = true;
+            playerGroup.add(rightArm);
+
+            playerGroup.position.copy(playerPos);
+            scene.add(playerGroup);
+        }
+
+        /**
+         * Spawn 30 Treasure Chests (18 Regular, 6 Gold Legendary, 6 Cursed Trap)
+         */
+        function spawnChests() {
+            chests.forEach(c => scene.remove(c.mesh));
+            chests = [];
+
+            // Shuffle all 30 questions while keeping their tier assignments
+            const shuffledQuestions = [...QUESTIONS_BANK].sort(() => Math.random() - 0.5);
+
+            // Distribute 30 chests across 3 concentric rings
+            const ringConfigs = [
+                { count: 6, minR: 12, maxR: 22 },
+                { count: 12, minR: 30, maxR: 62 },
+                { count: 12, minR: 68, maxR: 102 }
+            ];
+
+            let qIndex = 0;
+            ringConfigs.forEach((ring, rIdx) => {
+                for (let i = 0; i < ring.count; i++) {
+                    const angle = ((i / ring.count) * Math.PI * 2) + (rIdx * 0.45);
+                    const radius = ring.minR + ((i * 17) % (ring.maxR - ring.minR));
+                    const cx = Math.cos(angle) * radius;
+                    const cz = Math.sin(angle) * radius;
+
+                    const qData = shuffledQuestions[qIndex];
+                    const chestObj = createChestMesh(qIndex, cx, cz, qData);
+                    chests.push(chestObj);
+                    qIndex++;
+                }
+            });
+        }
+
+        /**
+         * Create Distinct 3D Chest Visuals Based on Tier ('regular', 'gold', 'trap')
+         */
+        function createChestMesh(id, x, z, questionData) {
+            const tier = questionData.tier; // 'regular' | 'gold' | 'trap'
+            const group = new THREE.Group();
+            group.position.set(x, 0.45, z);
+
+            // Scale & Materials per Tier
+            let scaleMult = 1.0;
+            let bodyColor = 0x92400e; // Wood brown
+            let trimColor = 0xfacc15; // Standard gold
+            let beamColor = 0x38bdf8; // Sky blue light beam
+            let ringColor = 0x38bdf8;
+            let metalness = 0.4;
+
+            if (tier === 'gold') {
+                scaleMult = 1.32; // Larger majestic chest
+                bodyColor = 0xf59e0b; // Radiant gold body
+                trimColor = 0xfef08a; // Bright platinum-gold trim
+                beamColor = 0xfde047; // Bright golden beam
+                ringColor = 0xfacc15;
+                metalness = 0.85;
+            } else if (tier === 'trap') {
+                scaleMult = 1.08;
+                bodyColor = 0x4c1d95; // Dark cursed purple
+                trimColor = 0xe11d48; // Crimson red trim
+                beamColor = 0xc026d3; // Purple-magenta aura beam
+                ringColor = 0xf43f5e; // Warning crimson ring
+                metalness = 0.5;
+            }
+
+            group.scale.set(scaleMult, scaleMult, scaleMult);
+
+            const boxMat = new THREE.MeshStandardMaterial({
+                color: bodyColor,
+                roughness: tier === 'gold' ? 0.25 : 0.65,
+                metalness: metalness
+            });
+            const trimMat = new THREE.MeshStandardMaterial({
+                color: trimColor,
+                metalness: 0.7,
+                roughness: 0.2
+            });
+
+            // Wooden/Metal Box Base
+            const base = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.0, 1.25), boxMat);
+            base.position.y = 0.5;
+            base.castShadow = true;
+            base.receiveShadow = true;
+            group.add(base);
+
+            // Trim Bands
+            const band1 = new THREE.Mesh(new THREE.BoxGeometry(1.86, 1.04, 0.2), trimMat);
+            band1.position.set(0, 0.5, -0.4);
+            const band2 = new THREE.Mesh(new THREE.BoxGeometry(1.86, 1.04, 0.2), trimMat);
+            band2.position.set(0, 0.5, 0.4);
+            group.add(band1, band2);
+
+            // Lid Pivot
+            const lidPivot = new THREE.Group();
+            lidPivot.position.set(0, 1.0, -0.6);
+
+            const lidMesh = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.48, 1.26), boxMat);
+            lidMesh.position.set(0, 0.24, 0.6);
+            lidMesh.castShadow = true;
+            lidPivot.add(lidMesh);
+
+            const lockMesh = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.36, 0.15), trimMat);
+            lockMesh.position.set(0, 0.05, 1.24);
+            lidPivot.add(lockMesh);
+
+            group.add(lidPivot);
+
+            // Floating Emblem Above Special Chests (Crown/Gem for Gold, Warning Crystal/Skull for Trap)
+            let floatingEmblem = null;
+            if (tier === 'gold') {
+                const gemGeo = new THREE.OctahedronGeometry(0.45, 0);
+                const gemMat = new THREE.MeshStandardMaterial({
+                    color: 0xfef08a,
+                    emissive: 0xf59e0b,
+                    emissiveIntensity: 0.7,
+                    metalness: 0.8
+                });
+                floatingEmblem = new THREE.Mesh(gemGeo, gemMat);
+                floatingEmblem.position.set(0, 2.3, 0);
+                group.add(floatingEmblem);
+            } else if (tier === 'trap') {
+                // Warning spiked octahedron / skull crystal
+                const trapGroup = new THREE.Group();
+                const skullSphere = new THREE.Mesh(
+                    new THREE.DodecahedronGeometry(0.38, 0),
+                    new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x9f1239, emissiveIntensity: 0.6 })
+                );
+                const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 6), trimMat);
+                hornL.position.set(-0.3, 0.25, 0);
+                hornL.rotation.z = 0.5;
+                const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 6), trimMat);
+                hornR.position.set(0.3, 0.25, 0);
+                hornR.rotation.z = -0.5;
+                trapGroup.add(skullSphere, hornL, hornR);
+                trapGroup.position.set(0, 2.25, 0);
+                group.add(trapGroup);
+                floatingEmblem = trapGroup;
+            }
+
+            // Beacon Light Beam
+            const beamRadiusBottom = tier === 'gold' ? 1.15 : 0.8;
+            const beamHeight = tier === 'gold' ? 22 : 16;
+            const beamGeo = new THREE.CylinderGeometry(0.25, beamRadiusBottom, beamHeight, 16, 1, true);
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: beamColor,
+                transparent: true,
+                opacity: tier === 'gold' ? 0.34 : 0.22,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const lightBeam = new THREE.Mesh(beamGeo, beamMat);
+            lightBeam.position.y = beamHeight / 2 + 0.2;
+            group.add(lightBeam);
+
+            // Glowing Ground Ring
+            const ringGeo = new THREE.RingGeometry(1.3, 1.7, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: ringColor,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.05;
+            group.add(ring);
+
+            group.lookAt(0, 0.45, 0);
+            scene.add(group);
+
+            return {
+                id,
+                tier,
+                mesh: group,
+                lid: lidPivot,
+                lightBeam,
+                ring,
+                floatingEmblem,
+                x,
+                z,
+                opened: false,
+                questionData
+            };
+        }
+
+        function spawnCelebrationParticles(x, y, z, colorHex, count = 28) {
+            const geo = new THREE.OctahedronGeometry(0.26, 0);
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+
+            for (let i = 0; i < count; i++) {
+                const p = new THREE.Mesh(geo, mat);
+                p.position.set(x, y + 1.2, z);
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 6;
+                p.userData = {
+                    vx: Math.cos(angle) * speed,
+                    vy: 4 + Math.random() * 6.5,
+                    vz: Math.sin(angle) * speed,
+                    life: 1.25
+                };
+                scene.add(p);
+                particles.push(p);
+            }
+        }
+
+        function triggerTrapPenaltyEffect() {
+            // Red screen flash
+            const overlay = document.getElementById('trap-flash-overlay');
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+            }, 450);
+
+            // Shake modal card
+            const modalCard = document.getElementById('quiz-modal-card');
+            modalCard.classList.remove('shake-screen');
+            void modalCard.offsetWidth; // trigger reflow
+            modalCard.classList.add('shake-screen');
+        }
+
+        /**
+         * ============================================================================
+         * CONTROLS: KEYBOARD, MOUSE ORBIT, TOUCH VIRTUAL JOYSTICK
+         * ============================================================================
+         */
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+                if ((e.code === 'Space' || e.key === 'e' || e.key === 'E') && gameState.started && !gameState.paused && !gameState.ended) {
+                    if (gameState.activeChest && !gameState.activeChest.opened) {
+                        openQuizModal(gameState.activeChest);
+                    }
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+            });
+
+            canvas.addEventListener('pointerdown', (e) => {
+                isDraggingCamera = true;
+                prevPointer = { x: e.clientX, y: e.clientY };
+            });
+            window.addEventListener('pointermove', (e) => {
+                if (!isDraggingCamera || gameState.paused) return;
+                const dx = e.clientX - prevPointer.x;
+                const dy = e.clientY - prevPointer.y;
+                prevPointer = { x: e.clientX, y: e.clientY };
+
+                camYaw -= dx * 0.0065;
+                camPitch = Math.max(0.12, Math.min(1.1, camPitch + dy * 0.005));
+            });
+            window.addEventListener('pointerup', () => {
+                isDraggingCamera = false;
+            });
+
+            // Virtual Joystick Setup
+            const joyZone = document.getElementById('joystick-zone');
+            const joyKnob = document.getElementById('joystick-knob');
+            let joyTouchId = null;
+
+            joyZone.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                joyTouchId = touch.identifier;
+                updateJoystick(touch.clientX, touch.clientY);
+            }, { passive: false });
+
+            joyZone.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                    }
+                }
+            }, { passive: false });
+
+            const resetJoystick = (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joyTouchId) {
+                        joyTouchId = null;
+                        joyVector = { x: 0, y: 0 };
+                        joyKnob.style.transform = `translate(0px, 0px)`;
+                    }
+                }
+            };
+            joyZone.addEventListener('touchend', resetJoystick);
+            joyZone.addEventListener('touchcancel', resetJoystick);
+
+            function updateJoystick(clientX, clientY) {
+                const rect = joyZone.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const maxDist = rect.width / 2 - 20;
+
+                let dx = clientX - centerX;
+                let dy = clientY - centerY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > maxDist) {
+                    dx = (dx / dist) * maxDist;
+                    dy = (dy / dist) * maxDist;
+                }
+                joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                joyVector.x = dx / maxDist;
+                joyVector.y = dy / maxDist;
+            }
+        }
+
+        /**
+         * ============================================================================
+         * UI & GAMEPLAY LOGIC
+         * ============================================================================
+         */
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2600);
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-player-name').textContent = gameState.playerName;
+            const scoreEl = document.getElementById('hud-score');
+            scoreEl.textContent = gameState.score;
+            scoreEl.className = gameState.score < 0 ? 'text-rose-400' : 'text-yellow-400';
+            document.getElementById('hud-chests').textContent = gameState.chestsOpened;
+        }
+
+        // Start Game Button
+        document.getElementById('start-btn').addEventListener('click', () => {
+            const nameInput = document.getElementById('player-name-input').value.trim();
+            const errorEl = document.getElementById('name-error');
+
+            if (!nameInput) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            errorEl.classList.add('hidden');
+            gameState.playerName = nameInput;
+            gameState.started = true;
+            gameState.paused = false;
+
+            sfx.init();
+            sfx.playOpenChest('regular');
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('joystick-zone').classList.remove('hidden');
+            updateHUD();
+            showToast(`Selamat berpetualang, ${gameState.playerName}!`);
+        });
+
+        // Sound Toggle
+        document.getElementById('sound-toggle-btn').addEventListener('click', (e) => {
+            sfx.enabled = !sfx.enabled;
+            e.target.textContent = sfx.enabled ? '🔊' : '🔇';
+            showToast(sfx.enabled ? 'Suara diaktifkan' : 'Suara dimatikan');
+        });
+
+        // Open Chest Button
+        document.getElementById('open-chest-btn').addEventListener('click', () => {
+            if (gameState.activeChest && !gameState.activeChest.opened) {
+                openQuizModal(gameState.activeChest);
+            }
+        });
+
+        // Compass Helper: Turn Player & Camera Toward Nearest Unopened Chest
+        document.getElementById('teleport-nearest-btn').addEventListener('click', () => {
+            const nearest = getNearestUnopenedChest();
+            if (!nearest) return;
+            const dx = nearest.x - playerPos.x;
+            const dz = nearest.z - playerPos.z;
+            const targetAngle = Math.atan2(dx, dz);
+            playerRotY = targetAngle;
+            camYaw = targetAngle + Math.PI;
+            const label = nearest.tier === 'gold' ? 'Peti Emas' : (nearest.tier === 'trap' ? 'Peti Jebakan' : 'Peti Reguler');
+            showToast(`🧭 Kompas diarahkan ke ${label} (${Math.round(Math.hypot(dx, dz))}m)`);
+        });
+
+        // Finish Early Button
+        document.getElementById('finish-early-btn').addEventListener('click', () => {
+            showEndScreen();
+        });
+
+        // Print Report Button
+        document.getElementById('print-report-btn').addEventListener('click', () => {
+            window.print();
+        });
+
+        // Play Again Button
+        document.getElementById('play-again-btn').addEventListener('click', () => {
+            gameState.score = 0;
+            gameState.chestsOpened = 0;
+            gameState.correctCount = 0;
+            gameState.wrongCount = 0;
+            gameState.statsByTier = {
+                regular: { correct: 0, points: 0 },
+                gold: { correct: 0, points: 0 },
+                trap: { correct: 0, wrong: 0, points: 0 }
+            };
+            gameState.history = [];
+            gameState.activeChest = null;
+            gameState.ended = false;
+            gameState.paused = false;
+
+            playerPos.set(0, 0, 12);
+            playerRotY = Math.PI;
+            camYaw = Math.PI;
+
+            spawnChests();
+            updateHUD();
+
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            showToast("Petualangan baru dimulai! Semangat!");
+        });
+
+        /**
+         * Open Quiz Modal with Distinct Styling & Point Rules per Chest Tier
+         */
+        function openQuizModal(chest) {
+            gameState.paused = true;
+            const tier = chest.tier;
+            sfx.playOpenChest(tier);
+
+            const qData = chest.questionData;
+            const currentNum = gameState.chestsOpened + 1;
+
+            const modalCard = document.getElementById('quiz-modal-card');
+            const chestIcon = document.getElementById('quiz-chest-icon');
+            const typeBadge = document.getElementById('quiz-type-badge');
+            const ruleBanner = document.getElementById('quiz-rule-banner');
+            const ruleText = document.getElementById('quiz-rule-text');
+
+            // Reset classes
+            modalCard.classList.remove('border-amber-400', 'border-yellow-400', 'border-purple-500');
+            typeBadge.className = 'text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full';
+            ruleBanner.className = 'mb-3 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between border';
+
+            if (tier === 'gold') {
+                modalCard.classList.add('border-yellow-400');
+                chestIcon.textContent = '👑';
+                typeBadge.classList.add('bg-yellow-200', 'text-yellow-900');
+                typeBadge.textContent = 'Peti Emas Legendaris (HOTS)';
+                ruleBanner.classList.add('bg-yellow-50', 'text-yellow-900', 'border-yellow-300');
+                ruleText.textContent = '⭐ Hadiah Tertinggi: Jawaban Benar +25 Poin | Jawaban Salah 0 Poin';
+            } else if (tier === 'trap') {
+                modalCard.classList.add('border-purple-500');
+                chestIcon.textContent = '☠️';
+                typeBadge.classList.add('bg-purple-200', 'text-purple-950');
+                typeBadge.textContent = 'Peti Jebakan Terkutuk!';
+                ruleBanner.classList.add('bg-rose-50', 'text-rose-900', 'border-rose-300');
+                ruleText.textContent = '⚠️ Hati-hati! Benar +15 Poin | Salah Terkena Jebakan -10 Poin!';
+            } else {
+                modalCard.classList.add('border-amber-400');
+                chestIcon.textContent = '🧰';
+                typeBadge.classList.add('bg-sky-100', 'text-sky-900');
+                typeBadge.textContent = 'Peti Reguler';
+                ruleBanner.classList.add('bg-sky-50', 'text-sky-900', 'border-sky-200');
+                ruleText.textContent = 'ℹ️ Aturan Poin: Jawaban Benar +10 Poin | Jawaban Salah 0 Poin';
+            }
+
+            document.getElementById('quiz-topic-badge').textContent = qData.topic;
+            document.getElementById('quiz-progress-text').textContent = `Peti ${currentNum} dari 30`;
+            document.getElementById('quiz-question').textContent = qData.q;
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.add('hidden');
+            const continueBtn = document.getElementById('quiz-continue-btn');
+            continueBtn.classList.add('hidden');
+
+            const letters = ['A', 'B', 'C', 'D'];
+            qData.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition flex items-start gap-3 font-semibold text-slate-700 text-sm sm:text-base cursor-pointer";
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 font-bold flex items-center justify-center shrink-0 text-sm">${letters[idx]}</span>
+                    <span class="pt-0.5">${optText}</span>
+                `;
+                btn.addEventListener('click', () => handleAnswer(chest, idx));
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Evaluate Player's Answer & Apply Tier Point / Trap Penalty Logic
+         */
+        function handleAnswer(chest, selectedIdx) {
+            const qData = chest.questionData;
+            const tier = chest.tier;
+            const isCorrect = selectedIdx === qData.answer;
+            const optionButtons = document.getElementById('quiz-options').querySelectorAll('button');
+
+            optionButtons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:border-amber-400', 'hover:bg-amber-50');
+                if (idx === qData.answer) {
+                    btn.classList.remove('border-slate-200');
+                    btn.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+                    btn.querySelector('span:first-child').classList.replace('bg-slate-200', 'bg-emerald-500');
+                    btn.querySelector('span:first-child').classList.replace('text-slate-700', 'text-white');
+                } else if (idx === selectedIdx && !isCorrect) {
+                    btn.classList.remove('border-slate-200');
+                    btn.classList.add('border-rose-500', 'bg-rose-50', 'text-rose-900');
+                    btn.querySelector('span:first-child').classList.replace('bg-slate-200', 'bg-rose-500');
+                    btn.querySelector('span:first-child').classList.replace('text-slate-700', 'text-white');
+                }
+            });
+
+            // Mark chest as opened in 3D
+            chest.opened = true;
+            chest.lightBeam.visible = false;
+            if (chest.floatingEmblem) chest.floatingEmblem.visible = false;
+            chest.ring.material.color.setHex(0x94a3b8);
+            chest.ring.material.opacity = 0.25;
+
+            gameState.chestsOpened++;
+            let pointsDelta = 0;
+
+            if (isCorrect) {
+                gameState.correctCount++;
+                if (tier === 'gold') {
+                    pointsDelta = 25;
+                    gameState.statsByTier.gold.correct++;
+                    gameState.statsByTier.gold.points += 25;
+                    sfx.playCorrect('gold');
+                    spawnCelebrationParticles(chest.x, 0.5, chest.z, 0xfacc15, 45);
+                } else if (tier === 'trap') {
+                    pointsDelta = 15;
+                    gameState.statsByTier.trap.correct++;
+                    gameState.statsByTier.trap.points += 15;
+                    sfx.playCorrect('regular');
+                    spawnCelebrationParticles(chest.x, 0.5, chest.z, 0xc084fc, 35);
+                } else {
+                    pointsDelta = 10;
+                    gameState.statsByTier.regular.correct++;
+                    gameState.statsByTier.regular.points += 10;
+                    sfx.playCorrect('regular');
+                    spawnCelebrationParticles(chest.x, 0.5, chest.z, 0x38bdf8, 28);
+                }
+            } else {
+                gameState.wrongCount++;
+                if (tier === 'trap') {
+                    pointsDelta = -10;
+                    gameState.statsByTier.trap.wrong++;
+                    gameState.statsByTier.trap.points -= 10;
+                    sfx.playTrapPenalty();
+                    triggerTrapPenaltyEffect();
+                    spawnCelebrationParticles(chest.x, 0.5, chest.z, 0xf43f5e, 32);
+                    showToast("💥 -10 Poin! Kamu terkena Peti Jebakan!");
+                } else {
+                    pointsDelta = 0;
+                    sfx.playWrong();
+                    spawnCelebrationParticles(chest.x, 0.5, chest.z, 0x94a3b8, 16);
+                }
+            }
+
+            gameState.score += pointsDelta;
+
+            // Record history
+            gameState.history.push({
+                number: gameState.chestsOpened,
+                tier,
+                pointsDelta,
+                topic: qData.topic,
+                q: qData.q,
+                userAnswer: qData.options[selectedIdx],
+                correctAnswer: qData.options[qData.answer],
+                isCorrect,
+                explanation: qData.explanation
+            });
+
+            updateHUD();
+
+            // Show Feedback Box
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackExp = document.getElementById('feedback-explanation');
+
+            feedbackBox.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-400', 'text-emerald-900', 'bg-rose-50', 'border-rose-400', 'text-rose-900', 'bg-purple-100', 'border-purple-500', 'text-purple-950');
+
+            if (isCorrect) {
+                feedbackBox.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-900');
+                if (tier === 'gold') {
+                    feedbackTitle.innerHTML = `👑 LUAR BIASA! Peti Emas Terbuka (+25 Poin)`;
+                } else if (tier === 'trap') {
+                    feedbackTitle.innerHTML = `🛡️ BERHASIL! Lolos dari Jebakan (+15 Poin)`;
+                } else {
+                    feedbackTitle.innerHTML = `🎉 Hebat! Jawaban Benar (+10 Poin)`;
+                }
+            } else {
+                if (tier === 'trap') {
+                    feedbackBox.classList.add('bg-purple-100', 'border-purple-500', 'text-purple-950');
+                    feedbackTitle.innerHTML = `☠️ JEBAKAN AKTIF! Jawaban Salah (-10 Poin)`;
+                } else {
+                    feedbackBox.classList.add('bg-rose-50', 'border-rose-400', 'text-rose-900');
+                    feedbackTitle.innerHTML = `💡 Kurang Tepat! (0 Poin) Yuk Pelajari Pembahasannya:`;
+                }
+            }
+            feedbackExp.textContent = qData.explanation;
+
+            const continueBtn = document.getElementById('quiz-continue-btn');
+            continueBtn.textContent = gameState.chestsOpened >= 30 ? '🏆 Lihat Rapor & Nilai Akhir!' : 'Lanjutkan Petualangan ➡️';
+            continueBtn.classList.remove('hidden');
+        }
+
+        // Continue Button after Answering
+        document.getElementById('quiz-continue-btn').addEventListener('click', () => {
+            document.getElementById('quiz-modal').classList.add('hidden');
+            document.getElementById('interact-prompt').classList.add('hidden');
+            gameState.activeChest = null;
+            gameState.paused = false;
+
+            if (gameState.chestsOpened >= 30) {
+                showEndScreen();
+            }
+        });
+
+        /**
+         * Show Final Score & Detailed Breakdown Report Screen
+         */
+        function showEndScreen() {
+            gameState.ended = true;
+            gameState.paused = true;
+            sfx.playFinish();
+
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            // Max possible score = (18 * 10) + (6 * 25) + (6 * 15) = 180 + 150 + 90 = 420
+            const MAX_SCORE = 420;
+            const clampedScore = Math.max(0, gameState.score);
+            const finalGrade = Math.round((clampedScore / MAX_SCORE) * 100);
+
+            let predicate = 'D';
+            let label = 'Perlu Belajar Lagi';
+            if (finalGrade >= 88) { predicate = 'A'; label = 'Sangat Baik (Istimewa)'; }
+            else if (finalGrade >= 75) { predicate = 'B'; label = 'Baik'; }
+            else if (finalGrade >= 60) { predicate = 'C'; label = 'Cukup'; }
+
+            document.getElementById('end-player-name').textContent = gameState.playerName;
+            const endScoreEl = document.getElementById('end-total-score');
+            endScoreEl.textContent = gameState.score;
+            endScoreEl.className = `text-2xl sm:text-3xl font-display font-bold ${gameState.score < 0 ? 'text-rose-600' : 'text-amber-600'}`;
+
+            document.getElementById('end-grade-number').textContent = finalGrade;
+            document.getElementById('end-correct-count').textContent = gameState.correctCount;
+            document.getElementById('end-wrong-count').textContent = gameState.wrongCount;
+            document.getElementById('end-answered-count').textContent = gameState.chestsOpened;
+            document.getElementById('end-predicate').textContent = predicate;
+            document.getElementById('end-predicate-label').textContent = label;
+
+            // Breakdown per tier
+            const reg = gameState.statsByTier.regular;
+            const gld = gameState.statsByTier.gold;
+            const trp = gameState.statsByTier.trap;
+            document.getElementById('breakdown-regular').textContent = `+${reg.points} Poin (${reg.correct} Benar)`;
+            document.getElementById('breakdown-gold').textContent = `+${gld.points} Poin (${gld.correct} Benar)`;
+            const trapSign = trp.points > 0 ? `+${trp.points}` : `${trp.points}`;
+            document.getElementById('breakdown-trap').textContent = `${trapSign} Poin (${trp.correct} Lolos, ${trp.wrong} Kena Jebakan)`;
+
+            // Populate Review List
+            const reviewList = document.getElementById('review-list');
+            reviewList.innerHTML = '';
+
+            if (gameState.history.length === 0) {
+                reviewList.innerHTML = `<p class="text-center text-slate-500 text-sm py-4">Belum ada peti harta karun yang dibuka.</p>`;
+                return;
+            }
+
+            gameState.history.forEach((item) => {
+                let tierLabel = '🧰 Peti Reguler';
+                let tierBadgeClass = 'bg-sky-100 text-sky-800';
+                if (item.tier === 'gold') {
+                    tierLabel = '👑 Peti Emas';
+                    tierBadgeClass = 'bg-yellow-200 text-yellow-900';
+                } else if (item.tier === 'trap') {
+                    tierLabel = '☠️ Peti Jebakan';
+                    tierBadgeClass = 'bg-purple-200 text-purple-900';
+                }
+
+                const deltaText = item.pointsDelta > 0 ? `+${item.pointsDelta}` : `${item.pointsDelta}`;
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-2xl border-2 text-xs sm:text-sm ${item.isCorrect ? 'bg-emerald-50/70 border-emerald-200' : 'bg-rose-50/70 border-rose-200'}`;
+                card.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-1 font-bold mb-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-slate-700">Peti #${item.number}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] ${tierBadgeClass}">${tierLabel}</span>
+                            <span class="text-slate-500 font-semibold">• ${item.topic}</span>
+                        </div>
+                        <span class="${item.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">
+                            ${item.isCorrect ? `✅ Benar (${deltaText})` : `❌ Salah (${deltaText})`}
+                        </span>
+                    </div>
+                    <p class="font-semibold text-slate-800 mb-1.5">${item.q}</p>
+                    <p class="text-slate-600">Jawabanmu: <strong class="${item.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">${item.userAnswer}</strong></p>
+                    ${!item.isCorrect ? `<p class="text-emerald-800">Jawaban Benar: <strong>${item.correctAnswer}</strong></p>` : ''}
+                    <p class="text-slate-500 mt-1 italic">💡 ${item.explanation}</p>
+                `;
+                reviewList.appendChild(card);
+            });
+        }
+
+        /**
+         * ============================================================================
+         * RADAR / MINI-MAP & NEAREST CHEST DETECTION
+         * ============================================================================
+         */
+        function getNearestUnopenedChest() {
+            let minDist = Infinity;
+            let nearest = null;
+            for (const c of chests) {
+                if (c.opened) continue;
+                const d = Math.hypot(c.x - playerPos.x, c.z - playerPos.z);
+                if (d < minDist) {
+                    minDist = d;
+                    nearest = c;
+                }
+            }
+            return nearest;
+        }
+
+        function drawRadar() {
+            const w = radarCanvas.width;
+            const h = radarCanvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const maxRadarRange = 85;
+
+            radarCtx.clearRect(0, 0, w, h);
+
+            radarCtx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            radarCtx.beginPath();
+            radarCtx.arc(cx, cy, cx, 0, Math.PI * 2);
+            radarCtx.fill();
+
+            radarCtx.strokeStyle = 'rgba(250, 204, 21, 0.25)';
+            radarCtx.lineWidth = 1;
+            radarCtx.beginPath();
+            radarCtx.arc(cx, cy, cx * 0.55, 0, Math.PI * 2);
+            radarCtx.stroke();
+
+            const nearest = getNearestUnopenedChest();
+            chests.forEach(c => {
+                if (c.opened) return;
+                const dx = c.x - playerPos.x;
+                const dz = c.z - playerPos.z;
+                const dist = Math.hypot(dx, dz);
+
+                const angleToChest = Math.atan2(dx, dz) - camYaw;
+                const clampedDist = Math.min(dist, maxRadarRange);
+                const rNorm = (clampedDist / maxRadarRange) * (cx - 8);
+
+                const rx = cx - Math.sin(angleToChest) * rNorm;
+                const ry = cy + Math.cos(angleToChest) * rNorm;
+
+                // Distinct dot color per chest tier
+                let dotColor = '#38bdf8'; // Blue for regular
+                let dotRadius = 2.6;
+                if (c.tier === 'gold') {
+                    dotColor = '#facc15'; // Bright gold
+                    dotRadius = 3.8;
+                } else if (c.tier === 'trap') {
+                    dotColor = '#e879f9'; // Purple/crimson for trap
+                    dotRadius = 3.2;
+                }
+
+                if (c === nearest) dotRadius += 1.0;
+
+                radarCtx.fillStyle = dotColor;
+                radarCtx.beginPath();
+                radarCtx.arc(rx, ry, dotRadius, 0, Math.PI * 2);
+                radarCtx.fill();
+
+                if (c.tier === 'trap') {
+                    radarCtx.strokeStyle = '#f43f5e';
+                    radarCtx.lineWidth = 1;
+                    radarCtx.stroke();
+                }
+            });
+
+            // Center Player Arrow
+            radarCtx.fillStyle = '#f97316';
+            radarCtx.beginPath();
+            radarCtx.moveTo(cx, cy - 6);
+            radarCtx.lineTo(cx - 4.5, cy + 5);
+            radarCtx.lineTo(cx + 4.5, cy + 5);
+            radarCtx.closePath();
+            radarCtx.fill();
+
+            const distBadge = document.getElementById('nearest-dist');
+            if (nearest) {
+                const d = Math.round(Math.hypot(nearest.x - playerPos.x, nearest.z - playerPos.z));
+                distBadge.textContent = `${d} m`;
+            } else {
+                distBadge.textContent = `Selesai!`;
+            }
+        }
+
+        /**
+         * ============================================================================
+         * MAIN ANIMATION & PHYSICS LOOP
+         * ============================================================================
+         */
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1);
+            const elapsed = clock.getElapsedTime();
+
+            if (waterMesh) {
+                waterMesh.position.y = -0.65 + Math.sin(elapsed * 1.5) * 0.08;
+            }
+
+            // Animate Chests
+            chests.forEach(c => {
+                if (c.opened) {
+                    c.lid.rotation.x = THREE.MathUtils.lerp(c.lid.rotation.x, -Math.PI * 0.55, dt * 5);
+                } else {
+                    const pulse = 1 + Math.sin(elapsed * 4 + c.id) * 0.12;
+                    c.ring.scale.set(pulse, pulse, 1);
+                    if (c.floatingEmblem) {
+                        c.floatingEmblem.rotation.y += dt * 2.2;
+                        c.floatingEmblem.position.y = 2.25 + Math.sin(elapsed * 3.5 + c.id) * 0.18;
+                    }
+                }
+            });
+
+            // Animate Celebration Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.userData.life -= dt;
+                p.userData.vy -= 14 * dt;
+                p.position.x += p.userData.vx * dt;
+                p.position.y += p.userData.vy * dt;
+                p.position.z += p.userData.vz * dt;
+                p.rotation.x += 5 * dt;
+                p.rotation.y += 5 * dt;
+
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Player Movement when Game Active
+            if (gameState.started && !gameState.paused && !gameState.ended) {
+                let moveForward = 0;
+                let moveRight = 0;
+
+                if (keys.w || keys.ArrowUp) moveForward += 1;
+                if (keys.s || keys.ArrowDown) moveForward -= 1;
+                if (keys.d || keys.ArrowRight) moveRight += 1;
+                if (keys.a || keys.ArrowLeft) moveRight -= 1;
+
+                moveForward -= joyVector.y;
+                moveRight += joyVector.x;
+
+                const inputLen = Math.hypot(moveForward, moveRight);
+                if (inputLen > 0.05) {
+                    const normF = moveForward / Math.max(1, inputLen);
+                    const normR = moveRight / Math.max(1, inputLen);
+
+                    const forwardX = -Math.sin(camYaw);
+                    const forwardZ = -Math.cos(camYaw);
+                    const rightX = Math.cos(camYaw);
+                    const rightZ = -Math.sin(camYaw);
+
+                    const dirX = forwardX * normF + rightX * normR;
+                    const dirZ = forwardZ * normF + rightZ * normR;
+
+                    const speed = 18 * dt;
+                    let nextX = playerPos.x + dirX * speed;
+                    let nextZ = playerPos.z + dirZ * speed;
+
+                    const distFromCenter = Math.hypot(nextX, nextZ);
+                    if (distFromCenter < ISLAND_RADIUS - 2) {
+                        playerPos.x = nextX;
+                        playerPos.z = nextZ;
+                    }
+
+                    const targetRot = Math.atan2(dirX, dirZ);
+                    let diff = targetRot - playerRotY;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    playerRotY += diff * 12 * dt;
+
+                    const walkCycle = Math.sin(elapsed * 14) * 0.65;
+                    leftLeg.rotation.x = walkCycle;
+                    rightLeg.rotation.x = -walkCycle;
+                    leftArm.rotation.x = -walkCycle * 0.7;
+                    rightArm.rotation.x = walkCycle * 0.7;
+                    playerGroup.position.y = Math.abs(Math.sin(elapsed * 14)) * 0.15;
+                } else {
+                    leftLeg.rotation.x = 0;
+                    rightLeg.rotation.x = 0;
+                    leftArm.rotation.x = 0;
+                    rightArm.rotation.x = 0;
+                    playerGroup.position.y = 0;
+                }
+
+                playerGroup.position.x = playerPos.x;
+                playerGroup.position.z = playerPos.z;
+                playerGroup.rotation.y = playerRotY;
+
+                // Check Proximity to Unopened Chests & Update Interaction Prompt
+                let foundNearby = null;
+                for (const c of chests) {
+                    if (c.opened) continue;
+                    const dist = Math.hypot(c.x - playerPos.x, c.z - playerPos.z);
+                    if (dist < 4.4) {
+                        foundNearby = c;
+                        break;
+                    }
+                }
+
+                gameState.activeChest = foundNearby;
+                const promptEl = document.getElementById('interact-prompt');
+                const openBtn = document.getElementById('open-chest-btn');
+                const promptText = document.getElementById('interact-prompt-text');
+
+                if (foundNearby) {
+                    openBtn.className = "font-display font-bold text-sm sm:text-lg px-5 sm:px-6 py-3.5 rounded-full shadow-2xl border-4 border-white flex items-center gap-2 transform transition hover:scale-105 active:scale-95 animate-bounce cursor-pointer";
+                    if (foundNearby.tier === 'gold') {
+                        openBtn.classList.add('bg-gradient-to-r', 'from-yellow-300', 'via-amber-400', 'to-yellow-500', 'text-slate-950');
+                        promptText.textContent = '👑 Buka Peti Emas Legendaris (+25 Poin)!';
+                    } else if (foundNearby.tier === 'trap') {
+                        openBtn.classList.add('bg-gradient-to-r', 'from-purple-700', 'via-fuchsia-700', 'to-rose-700', 'text-white');
+                        promptText.textContent = '⚠️ Buka Peti Jebakan (+15 / -10 jika salah)!';
+                    } else {
+                        openBtn.classList.add('bg-gradient-to-r', 'from-sky-400', 'via-cyan-400', 'to-emerald-400', 'text-slate-950');
+                        promptText.textContent = '🧰 Buka Peti Reguler (+10 Poin)!';
+                    }
+                    promptEl.classList.remove('hidden');
+                } else {
+                    promptEl.classList.add('hidden');
+                }
+
+                drawRadar();
+            } else if (!gameState.started) {
+                camYaw += dt * 0.18;
+            }
+
+            const camX = playerPos.x + Math.sin(camYaw) * Math.cos(camPitch) * camDistance;
+            const camY = playerPos.y + 2.5 + Math.sin(camPitch) * camDistance;
+            const camZ = playerPos.z + Math.cos(camYaw) * Math.cos(camPitch) * camDistance;
+
+            camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.18);
+            camera.lookAt(playerPos.x, playerPos.y + 2.0, playerPos.z);
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function () {
+            initThree();
+            setupControls();
+            animate();
+        };
+    </script>
+</body>
+</html>
